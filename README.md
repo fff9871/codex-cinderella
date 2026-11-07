@@ -33,6 +33,12 @@ codex login
 
 使用本机 Codex 登录状态，不需要把 token 写进脚本或仓库。
 
+脚本优先使用 `CODEX_BIN`，其次查找 `PATH`，最后自动查找 macOS `/Applications` 和 `~/Applications` 中的 ChatGPT / Codex 应用内置 CLI。后台启动时会固定解析后的路径，因此终端的 PATH 不包含 `codex` 也能使用应用内置版本。如果安装在其他位置，可手动指定：
+
+```bash
+CODEX_BIN="/absolute/path/to/codex" python3 cinderella.py start
+```
+
 ## 启动方式
 
 ```bash

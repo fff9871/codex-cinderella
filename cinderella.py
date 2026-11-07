@@ -111,6 +111,9 @@ def main():
         if pid:
             p.error(f'Already running: PID {pid}')
         if args.command == 'start':
+            from codex_quota import find_codex
+            # Resolve before detaching so configuration errors appear in the terminal.
+            env = dict(os.environ, CODEX_BIN=find_codex())
             fcntl.flock(lock, fcntl.LOCK_UN)
             cmd = [sys.executable, str(Path(__file__).resolve()), 'run', '--state-dir', str(directory),
                    '--interval', str(args.interval), '--lead-seconds', str(args.lead_seconds)]
@@ -118,7 +121,7 @@ def main():
                 cmd.append('--dry-run')
             with (directory / 'launcher.log').open('a') as output:
                 child = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=output, stderr=output,
-                                         start_new_session=True, cwd=ROOT)
+                                         start_new_session=True, cwd=ROOT, env=env)
             for _ in range(50):
                 time.sleep(0.1)
                 if child.poll() is not None:

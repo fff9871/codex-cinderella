@@ -3,17 +3,39 @@
 import argparse
 import json
 import os
+from pathlib import Path
 import selectors
 import shutil
 import subprocess
 import time
 
 
+def find_codex():
+    """Resolve CLI even when a terminal/daemon has a minimal PATH."""
+    override = os.environ.get('CODEX_BIN')
+    if override:
+        binary = Path(override).expanduser()
+        if binary.is_file() and os.access(binary, os.X_OK):
+            return str(binary.resolve())
+        raise RuntimeError(f'CODEX_BIN is not an executable file: {override}')
+    binary = shutil.which('codex')
+    if binary:
+        return binary
+    for app_dir in (Path('/Applications'), Path.home() / 'Applications'):
+        for relative in (
+            'ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex',
+            'Codex.app/Contents/Resources/codex',
+            'Codex.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex',
+        ):
+            candidate = app_dir / relative
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return str(candidate)
+    raise RuntimeError('Codex CLI not found. Set CODEX_BIN to the absolute path of the codex executable.')
+
+
 class Client:
     def __enter__(self):
-        binary = shutil.which('codex')
-        if not binary:
-            raise RuntimeError('codex CLI not found on PATH; install Codex and log in first')
+        binary = find_codex()
         self.proc = subprocess.Popen([binary, 'app-server'], stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=None, bufsize=0)
         self.sel = selectors.DefaultSelector()
